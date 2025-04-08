@@ -187,3 +187,26 @@ def analyze_stream(stream):
 
     return results
 
+# Function to add statistical significance annotations
+def add_stat_significance(ax, pairs, p_values, y_offset=1, y_increment=0.5, h=0.2, show_non_significant=False):
+    """
+    Adds statistical significance annotations to the plot.
+    """
+    annot = ["*", "**", "***"]
+    value = [0.05, 0.01, 0.001]
+    ymax = ax.get_ylim()[1]
+    for (pair, p_value) in zip(pairs, p_values):
+        x1, x2 = pair
+        y = ymax + y_offset
+        if p_value < 0.05:
+            annot_index = np.searchsorted(value, p_value)
+            annot_text = f"{annot[annot_index]} (p<{value[annot_index]})"
+            ax.text((x1 + x2) * 0.5, y + h, annot_text, ha='center', va='bottom', color='k')
+            ax.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, c='k')
+
+        elif show_non_significant:
+            ax.text((x1 + x2) * 0.5, y + h, "ns", ha='center', va='bottom', color='k', bbox=dict(facecolor='w', edgecolor='w', pad=-1.5))
+            ax.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, c='k')
+        y_offset += y_increment
+    return ax   
+
