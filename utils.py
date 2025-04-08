@@ -87,7 +87,7 @@ def analyze_accidentals(stream):
                 n_accidentals += 1
     
         accidentals.append(n_accidentals)
-    return len(accidentals)
+    return np.mean(accidentals)
 
 def analyze_syncopations(stream):
 
