@@ -73,20 +73,24 @@ def analyze_unique_notes_per_bar(stream):
     return np.mean(unique_notes_per_bar)
 
 def analyze_accidentals(stream):
-    # Get the notes in the stream
-    notes = stream.flatten().notes
     
     measures = stream.getElementsByClass('Measure')
     
     accidentals = []
     
-    for measure in measures:
-        n_accidentals = 0
-        for note in measure.notes:
-            if note.pitch.accidental is not None:
-                n_accidentals += 1
+    current_key = stream.analyze("key")
     
-        accidentals.append(n_accidentals)
+    for measure in measures:
+
+        # Get the set of pitch classes in the current key
+        key_pitches = set(k.pitchClass for k in current_key.pitches)
+
+        count = 0
+        for n in measure.notes:
+            if n.pitch.pitchClass not in key_pitches:
+                count += 1
+        accidentals.append(count)
+
     return np.mean(accidentals)
 
 def analyze_syncopations(stream):
@@ -142,7 +146,7 @@ def analyze_notes_per_bar(stream):
 
 def get_time_signature(stream):
     # Get the time signature of the stream
-    time_signature = stream.getElementsByClass('TimeSignature')
+    time_signature = stream.getTimeSignatures()
     
     if len(time_signature) > 0:
         return time_signature[0].numerator, time_signature[0].denominator
@@ -195,10 +199,12 @@ def add_stat_significance(ax, pairs, p_values, y_offset=1, y_increment=0.5, h=0.
     annot = ["*", "**", "***"]
     value = [0.05, 0.01, 0.001]
     ymax = ax.get_ylim()[1]
+    sig = False
     for (pair, p_value) in zip(pairs, p_values):
         x1, x2 = pair
         y = ymax + y_offset
         if p_value < 0.05:
+            sig = True
             annot_index = np.searchsorted(value, p_value)
             annot_text = f"{annot[annot_index]} (p<{value[annot_index]})"
             ax.text((x1 + x2) * 0.5, y + h, annot_text, ha='center', va='bottom', color='k')
@@ -208,5 +214,7 @@ def add_stat_significance(ax, pairs, p_values, y_offset=1, y_increment=0.5, h=0.
             ax.text((x1 + x2) * 0.5, y + h, "ns", ha='center', va='bottom', color='k', bbox=dict(facecolor='w', edgecolor='w', pad=-1.5))
             ax.plot([x1, x1, x2, x2], [y, y + h, y + h, y], lw=1.5, c='k')
         y_offset += y_increment
+    if sig:
+        ax.set_ylim(ax.get_ylim()[0], ymax + y_offset*1.5)
     return ax   
 
